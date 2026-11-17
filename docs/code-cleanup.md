@@ -4,7 +4,6 @@
 
 ## 整理内容
 
-- 将旧教学后端、旧前端、原课程示例及教学数据库配置移至工作区 `../research/legacy-code-20261117/`，76 个文件逐项通过 manifest SHA256 核对。保留固定提交原源码供对照，运行不依赖归档。
 - 将后端预算、业务工具、提示词与正文流从 runtime 拆至 budget、tools、prompts、streaming，runtime 保留 Agent 组装与报告整合；原导入名称继续兼容已有脚本。
 - 将前端 HTTP、类型、状态映射、回答与图标分离，统一排版。保留现有对话、主题、SSE 与导出行为。
 - 移除未使用的教学依赖、Ant Design 与 Tailwind，更新 Python 与前端锁文件。requirements.txt 由 uv.lock 导出，requirements-korean.txt 仅作为兼容入口。
@@ -16,6 +15,6 @@
 - `python -m pytest tests -q`：75 passed，1 条既有 anyio / pytest 弃用警告。
 - 前端冻结依赖安装、Prettier 格式检查、TypeScript 检查与 Vite 生产构建通过。
 - 整理后的服务在本机 8000 端口启动，健康接口、首页及构建资源均返回 200。
-- 归档 76 个文件 SHA256 全部一致；本轮新增与调整的入口文档本地链接检查通过。
+- 本轮新增与调整的入口文档本地链接检查通过。
 
 工程回归不能代替真实模型的语义验收。最新新题结果仍为 6 题中 3 pass、3 needs_fix，详见 [回答约束验收](answer-contract-acceptance.md)。

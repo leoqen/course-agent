@@ -2,7 +2,7 @@
 
 ## 实际入口
 
-运行 `korean.server:app`；前端入口 `frontend/src/ResearchApp.tsx`。旧教学代码已归档到工作区研究目录，来源见 [UPSTREAM.md](../UPSTREAM.md)。应用8000与本机RAG只读网关8899通过HTTP通信，独立虚拟环境；地址可配置。
+运行 `korean.server:app`；前端入口 `frontend/src/ResearchApp.tsx`。应用8000与本机RAG只读网关8899通过HTTP通信，独立虚拟环境；地址可配置。
 
 前端以多轮对话组织请求，消息单独落chat_messages，关联不可变task_id；每轮沿用thread_id。输入缺少课程或完整调研所需的竞品时，规则解析器先保存澄清消息，不调用付费模型。支持明确课程ID/全名、竞品冒号格式和ISO日期；不声称具备通用自然语言意图解析。前端移除范围与文件选项，回答默认无文件，完成后可导出MD/PDF，导出不重新调用模型。CSS使用color-scheme与light-dark自动跟随系统，浏览器无需刷新即可响应系统主题变化。
 
