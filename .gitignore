@@ -1,0 +1,37 @@
+# Local secrets
+.env
+.env.*
+!.env.example
+frontend/.env.*
+!frontend/.env.example
+
+# Dependencies and generated files
+.venv/
+venv/
+node_modules/
+.pnpm-store/
+.npm-cache/
+.uv-cache/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local records and generated reports
+data/
+output/
+
+# Editor and system files
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+.DS_Store
+Thumbs.db
+npm-debug.log*
+pnpm-debug.log*

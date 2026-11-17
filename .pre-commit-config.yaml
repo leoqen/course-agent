@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+
+  - repo: local
+    hooks:
+      - id: python-syntax
+        name: Python syntax check
+        entry: uv run --frozen --extra dev python -m py_compile
+        language: system
+        types_or: [python, pyi]
+        require_serial: true

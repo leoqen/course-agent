@@ -1,0 +1,802 @@
+[
+  {
+    "id": "E01",
+    "split": "dev",
+    "kind": "sales",
+    "course_id": "K01",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "sales",
+    "query": "统计区间成交订单、收款、按退款发生时间的退款和净收款，给出SQL依据。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E02",
+    "split": "dev",
+    "kind": "rag",
+    "course_id": "K02",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "course",
+    "query": "查询本课程价格、课时和授课方式，保留原文引用。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E03",
+    "split": "dev",
+    "kind": "network",
+    "course_id": "K03",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "network",
+    "query": "调查竞品同目标课程的公开价格、授课形式与课时，给出URL和采集时间。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E04",
+    "split": "dev",
+    "kind": "combined",
+    "course_id": "K01",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "full",
+    "query": "比较竞品与自家课程的目标、价格和服务，结合区间销售，区分事实与推测。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E05",
+    "split": "dev",
+    "kind": "missing",
+    "course_id": "K02",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "full",
+    "query": "核实是否提供TOPIK II备考、24小时答疑和保过承诺；无依据则说明未知或不适用。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E06",
+    "split": "dev",
+    "kind": "sales",
+    "course_id": "K03",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "sales",
+    "query": "按渠道比较成交订单与收款，说明为什么无法据此计算转化率和ROI。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E07",
+    "split": "dev",
+    "kind": "rag",
+    "course_id": "K01",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "course",
+    "query": "查询服务与答疑政策，区分承诺与未公开的信息。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E08",
+    "split": "dev",
+    "kind": "network",
+    "course_id": "K02",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "network",
+    "query": "调查竞品是否为直播或录播，不把二者按价格直接排名。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E09",
+    "split": "dev",
+    "kind": "combined",
+    "course_id": "K03",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "full",
+    "query": "对比同目标课程的课时与形式；分析渠道成交，缺少费用时不计算ROI。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E10",
+    "split": "dev",
+    "kind": "missing",
+    "course_id": "K01",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "full",
+    "query": "有人声称自家课能保证考级通过，请核对原文，不得将营销推测写成承诺。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E11",
+    "split": "dev",
+    "kind": "sales",
+    "course_id": "K02",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "sales",
+    "query": "复盘月度销售，不将退款从成交订单数中扣除，不使用区间外的订单。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E12",
+    "split": "dev",
+    "kind": "rag",
+    "course_id": "K03",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "course",
+    "query": "说明本课程适合谁、有哪些前置基础，不混用其他课程字段。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E13",
+    "split": "dev",
+    "kind": "network",
+    "course_id": "K01",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "network",
+    "query": "搜索竞品答疑与服务政策，搜索摘要与网页正文分别标注。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E14",
+    "split": "dev",
+    "kind": "combined",
+    "course_id": "K02",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "full",
+    "query": "对比课程适用人群并复盘销售收款及退款，不声称竞品造成销售变化。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E15",
+    "split": "dev",
+    "kind": "missing",
+    "course_id": "K03",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "full",
+    "query": "能否证明竞品降价导致自家销量下降？明确现有资料能支持的结论与缺失条件。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E16",
+    "split": "dev",
+    "kind": "sales",
+    "course_id": "K01",
+    "start_date": "2026-10-01",
+    "end_date": "2026-11-01",
+    "research_scope": "sales",
+    "query": "统计成交客单价；若分组没有订单，客单价应标记未知而不是零。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E17",
+    "split": "dev",
+    "kind": "rag",
+    "course_id": "K02",
+    "start_date": "2026-10-01",
+    "end_date": "2026-11-01",
+    "research_scope": "course",
+    "query": "查询课程购买后的有效期及退款规则，注明适用条件。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E18",
+    "split": "dev",
+    "kind": "network",
+    "course_id": "K03",
+    "start_date": "2026-10-01",
+    "end_date": "2026-11-01",
+    "research_scope": "network",
+    "query": "查询竞品公开优惠及适用期限，不能把网页采集时间当成活动生效时间。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E19",
+    "split": "dev",
+    "kind": "combined",
+    "course_id": "K01",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "full",
+    "query": "对比课程每节时长，明确可比性，汇总成交与净收款并给出来源。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E20",
+    "split": "dev",
+    "kind": "missing",
+    "course_id": "K02",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "full",
+    "query": "能否由销售订单计算咨询转化率和投放ROI？明确缺失字段，不能自行补造。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E21",
+    "split": "dev",
+    "kind": "sales",
+    "course_id": "K03",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "sales",
+    "query": "分析退款；区分退款发生时间与原订单付款时间，不能用退款笔数直接计算退款率。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E22",
+    "split": "dev",
+    "kind": "rag",
+    "course_id": "K01",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "course",
+    "query": "核实本课程学习目标和课时长度，无法查到的字段显示未知。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E23",
+    "split": "dev",
+    "kind": "network",
+    "course_id": "K02",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "network",
+    "query": "查询竞品目标人群及学习目标；未公开价格标记未知，禁止估价。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E24",
+    "split": "dev",
+    "kind": "combined",
+    "course_id": "K03",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "full",
+    "query": "生成课程差异和经营复盘报告，缺失字段列为待确认问题，保留SQL与文档引用。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E25",
+    "split": "dev",
+    "kind": "missing",
+    "course_id": "K01",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "full",
+    "query": "若竞品未披露单节时长或服务范围，能否计算小时单价并排名？说明缺失与可比性。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E26",
+    "split": "dev",
+    "kind": "sales",
+    "course_id": "K02",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "sales",
+    "query": "统计区间成交订单、收款、按退款发生时间的退款和净收款，给出SQL依据。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E27",
+    "split": "dev",
+    "kind": "rag",
+    "course_id": "K03",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "course",
+    "query": "查询本课程价格、课时和授课方式，保留原文引用。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E28",
+    "split": "dev",
+    "kind": "network",
+    "course_id": "K01",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "network",
+    "query": "调查竞品同目标课程的公开价格、授课形式与课时，给出URL和采集时间。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E29",
+    "split": "dev",
+    "kind": "combined",
+    "course_id": "K02",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "full",
+    "query": "比较竞品与自家课程的目标、价格和服务，结合区间销售，区分事实与推测。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E30",
+    "split": "dev",
+    "kind": "missing",
+    "course_id": "K03",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "full",
+    "query": "核实是否提供TOPIK II备考、24小时答疑和保过承诺；无依据则说明未知或不适用。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E31",
+    "split": "holdout",
+    "kind": "sales",
+    "course_id": "K01",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "sales",
+    "query": "按渠道比较成交订单与收款，说明为什么无法据此计算转化率和ROI。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E32",
+    "split": "holdout",
+    "kind": "rag",
+    "course_id": "K02",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "course",
+    "query": "查询服务与答疑政策，区分承诺与未公开的信息。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E33",
+    "split": "holdout",
+    "kind": "network",
+    "course_id": "K03",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "network",
+    "query": "调查竞品是否为直播或录播，不把二者按价格直接排名。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E34",
+    "split": "holdout",
+    "kind": "combined",
+    "course_id": "K01",
+    "start_date": "2026-10-01",
+    "end_date": "2026-11-01",
+    "research_scope": "full",
+    "query": "对比同目标课程的课时与形式；分析渠道成交，缺少费用时不计算ROI。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E35",
+    "split": "holdout",
+    "kind": "missing",
+    "course_id": "K02",
+    "start_date": "2026-10-01",
+    "end_date": "2026-11-01",
+    "research_scope": "full",
+    "query": "有人声称自家课能保证考级通过，请核对原文，不得将营销推测写成承诺。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E36",
+    "split": "holdout",
+    "kind": "sales",
+    "course_id": "K03",
+    "start_date": "2026-10-01",
+    "end_date": "2026-11-01",
+    "research_scope": "sales",
+    "query": "复盘月度销售，不将退款从成交订单数中扣除，不使用区间外的订单。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E37",
+    "split": "holdout",
+    "kind": "rag",
+    "course_id": "K01",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "course",
+    "query": "说明本课程适合谁、有哪些前置基础，不混用其他课程字段。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E38",
+    "split": "holdout",
+    "kind": "network",
+    "course_id": "K02",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "network",
+    "query": "搜索竞品答疑与服务政策，搜索摘要与网页正文分别标注。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E39",
+    "split": "holdout",
+    "kind": "combined",
+    "course_id": "K03",
+    "start_date": "2026-05-01",
+    "end_date": "2026-06-01",
+    "research_scope": "full",
+    "query": "对比课程适用人群并复盘销售收款及退款，不声称竞品造成销售变化。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E40",
+    "split": "holdout",
+    "kind": "missing",
+    "course_id": "K01",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "full",
+    "query": "能否证明竞品降价导致自家销量下降？明确现有资料能支持的结论与缺失条件。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E41",
+    "split": "holdout",
+    "kind": "sales",
+    "course_id": "K02",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "sales",
+    "query": "统计成交客单价；若分组没有订单，客单价应标记未知而不是零。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E42",
+    "split": "holdout",
+    "kind": "rag",
+    "course_id": "K03",
+    "start_date": "2026-06-01",
+    "end_date": "2026-07-01",
+    "research_scope": "course",
+    "query": "查询课程购买后的有效期及退款规则，注明适用条件。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E43",
+    "split": "holdout",
+    "kind": "network",
+    "course_id": "K01",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "network",
+    "query": "查询竞品公开优惠及适用期限，不能把网页采集时间当成活动生效时间。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E44",
+    "split": "holdout",
+    "kind": "combined",
+    "course_id": "K02",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "full",
+    "query": "对比课程每节时长，明确可比性，汇总成交与净收款并给出来源。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E45",
+    "split": "holdout",
+    "kind": "missing",
+    "course_id": "K03",
+    "start_date": "2026-07-01",
+    "end_date": "2026-08-01",
+    "research_scope": "full",
+    "query": "能否由销售订单计算咨询转化率和投放ROI？明确缺失字段，不能自行补造。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E46",
+    "split": "holdout",
+    "kind": "sales",
+    "course_id": "K01",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "sales",
+    "query": "分析退款；区分退款发生时间与原订单付款时间，不能用退款笔数直接计算退款率。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E47",
+    "split": "holdout",
+    "kind": "rag",
+    "course_id": "K02",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "course",
+    "query": "核实本课程学习目标和课时长度，无法查到的字段显示未知。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E48",
+    "split": "holdout",
+    "kind": "network",
+    "course_id": "K03",
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "research_scope": "network",
+    "query": "查询竞品目标人群及学习目标；未公开价格标记未知，禁止估价。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E49",
+    "split": "holdout",
+    "kind": "combined",
+    "course_id": "K01",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "full",
+    "query": "生成课程差异和经营复盘报告，缺失字段列为待确认问题，保留SQL与文档引用。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  },
+  {
+    "id": "E50",
+    "split": "holdout",
+    "kind": "missing",
+    "course_id": "K02",
+    "start_date": "2026-09-01",
+    "end_date": "2026-10-01",
+    "research_scope": "full",
+    "query": "若竞品未披露单节时长或服务范围，能否计算小时单价并排名？说明缺失与可比性。",
+    "review_criteria": [
+      "事实字段与引用原文一致",
+      "SQL统计口径正确且金额与独立参考一致",
+      "未知字段不编造",
+      "不作竞品影响销量的因果断言"
+    ]
+  }
+]

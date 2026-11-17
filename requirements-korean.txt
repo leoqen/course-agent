@@ -1,0 +1,2 @@
+# Compatibility alias; requirements.txt is the single pip dependency list.
+-r requirements.txt
