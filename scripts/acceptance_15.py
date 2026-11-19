@@ -161,6 +161,39 @@ async def live_case(client, case, folder, s, source):
     print(case['id'],task['status'],'mechanical',all(checks.values()),'seconds',task['metrics'].get('seconds'),flush=True)
 
 
+async def source_preflight(client, cases, settings):
+    """Probe actual required data paths before paying for agent delegation."""
+    health = (await client.get('/api/health')).json()
+    if health['mode'] != 'live':
+        raise RuntimeError('真实评测必须live')
+    if not health.get('model_configured'):
+        raise RuntimeError('模型尚未配置，未提交任何付费任务')
+    required = set().union(*(SCOPE_SOURCES[c['scope']] for c in cases))
+    result = {'required_sources': sorted(required), 'model_connection_verified': False}
+    if 'network' in required and not health.get('search_configured'):
+        raise RuntimeError('搜索尚未配置，未提交任何付费任务')
+    if 'rag' in required:
+        case = next(c for c in cases if 'rag' in SCOPE_SOURCES[c['scope']])
+        try:
+            # Gateway health alone cannot detect an unavailable vector store.
+            response = await client.post(settings.rag_url.rstrip('/')+'/api/research/retrieve',
+                headers={'X-Research-Token': settings.rag_token},
+                json={'course_id': case['course_id'], 'query': '课程入学基础', 'top_k': 1}, timeout=90)
+            response.raise_for_status()
+            if not response.json().get('items'):
+                raise ValueError('empty retrieval')
+        except (httpx.HTTPError, ValueError) as exc:
+            raise RuntimeError('课程真实检索预检失败（'+type(exc).__name__+'），未提交任何付费任务') from None
+        result['rag_retrieval'] = 'OK'
+    if 'sales' in required:
+        try:
+            await asyncio.to_thread(Sales(settings).query, 'SELECT COUNT(*) AS orders FROM orders')
+        except Exception as exc:
+            raise RuntimeError('销售库预检失败（'+type(exc).__name__+'），未提交任何付费任务') from None
+        result['sales_query'] = 'OK'
+    return result
+
+
 async def run(args):
     catalog_path=(args.catalog or CATALOG).resolve()
     catalog=json.loads(catalog_path.read_text('utf-8'))
@@ -182,9 +215,13 @@ async def run(args):
     source=json.loads((s.data/'sales-source.json').read_text('utf-8'))
     print('output',folder,flush=True)
     async with httpx.AsyncClient(base_url='http://127.0.0.1:8000',timeout=20,trust_env=False) as client:
-        if any(c['mode']=='live' and not (folder/(c['id']+'.json')).exists() for c in selected):
-            health=(await client.get('/api/health')).json()
-            if health['mode']!='live':raise RuntimeError('真实评测必须live')
+        pending_live = [c for c in selected if c['mode']=='live' and not (folder/(c['id']+'.json')).exists()]
+        if pending_live:
+            try:
+                save(folder/'preflight.json', await source_preflight(client, pending_live, s))
+            except RuntimeError as exc:
+                save(folder/'preflight.json', {'status': 'blocked', 'reason': str(exc)})
+                raise
         for case in selected:
             path=folder/(case['id']+'.json')
             if path.exists():

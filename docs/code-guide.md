@@ -24,6 +24,8 @@
 | 刷新为什么还能看到回答 | streaming.py、store.py、server.py | 事件和草稿先持久化，浏览器重取快照；重启不会自动续跑付费任务 |
 | 测试通过代表什么 | tests/、docs/answer-contract-acceptance.md | 工程回归与真实问答语义复核分别报告，保留失败样例 |
 
+本轮回答可靠性修复、预检与证据回放见 [定向回归](reliability-regression.md)。
+
 ## 如何介绍自己的工作
 
 介绍业务问题、设计选择、实际修改和验证证据。可以说明“使用 DeepAgents / LangGraph 实现课程经营调研应用，参考公开项目的多专家调度思路，使用 Codex 辅助开发”，再展开销售口径、证据交接、状态恢复等能亲自讲解的实现。

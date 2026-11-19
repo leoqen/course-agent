@@ -204,12 +204,14 @@ pnpm dev
 
 | 验证 | 已记录结果 | 可以说明什么 |
 |---|---|---|
-| 本地工程测试 | 75 项通过，1 条既有依赖弃用警告 | 覆盖查询约束、统计、任务状态、交接、SSE 等工程行为；包含脚本模型测试 |
+| 本地工程测试 | 83 项通过，1 条既有依赖弃用警告 | 覆盖查询约束、统计、任务状态、交接、SSE 等工程行为；包含脚本模型测试 |
 | 前端检查 | 格式检查、TypeScript 与生产构建通过 | 代码格式与构建链路可用 |
-| 最近一轮 6 道冻结新题 | 执行：3 SUCCEEDED、3 PARTIAL；开发人工复核：3 pass、3 needs_fix | 开放问答仍有篇幅、未知范围和字面误报等问题 |
+| r13 一轮 6 道冻结新题 | 执行：3 SUCCEEDED、3 PARTIAL；开发人工复核：3 pass、3 needs_fix | 开放问答仍有篇幅、未知范围和字面误报等问题 |
 | 固定评测目录 | 50 条任务，30 开发 / 20 留出 | 提供评测题集；SQL 脚本只核对其中统计组件，不能视为 50 题语义准确率 |
 
-真实问答结论对应各自冻结版本；代码整理不构成新的真实模型验收。最新详情见 [回答约束验收](docs/answer-contract-acceptance.md)，较早完整 15 题记录见 [固定版本验收](docs/final-acceptance.md)。
+本轮 r14 修复了句数提示冲突、课程名引号误报、否定承诺误报，并增加检索状态与部分月份比较检查。完整在线复测被外部 Milvus 故障阻断；4 题保存证据的整合回放复核为 2 pass、2 needs_fix，不能代替端到端验收，详见 [可靠性定向回归](docs/reliability-regression.md)。
+
+真实问答结论对应各自冻结版本；代码整理不构成新的真实模型验收。r13 详情见 [回答约束验收](docs/answer-contract-acceptance.md)，较早完整 15 题记录见 [固定版本验收](docs/final-acceptance.md)。
 
 无需付费模型的本地检查：
 
@@ -301,7 +303,8 @@ docs/               架构、运行、验收与讲解材料
 | [代码讲解](docs/code-guide.md) | 沿一次请求阅读源码与常见技术追问 |
 | [结构化专家交接](docs/structured-handoff.md) | 原子事实、表格交接与已知限制 |
 | [引用边界](docs/evidence-boundaries.md) | 来源编号、摘录与有限约束 |
-| [最新新题验收](docs/answer-contract-acceptance.md) | 最新冻结问答结果与未通过项 |
+| [本轮可靠性回归](docs/reliability-regression.md) | 有限规则修复、环境阻断与整合回放 |
+| [r13 新题验收](docs/answer-contract-acceptance.md) | 最新冻结问答结果与未通过项 |
 | [三分钟演示](docs/interview-demo.md) | 演示准备与讲解路线 |
 | [简历项目表述](docs/resume-project.md) | 可验证的贡献与描述边界 |
 

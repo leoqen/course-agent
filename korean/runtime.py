@@ -10,9 +10,9 @@ from .models import SCOPE_SOURCES
 from .budget import Budget, BudgetExceeded
 from .tools import ResearchTools
 from .streaming import AnswerStream
-from .prompts import COMMON, MAIN_PROMPT
+from .prompts import COMMON, MAIN_PROMPT, revision_instruction
 from .handoff import (SpecialistResult, SalesResult, EXTRACTION_PROMPT, validate_handoff,
-                      answer_policy, body_length, handoff_json, check_answer_contract, sentence_count)
+                      answer_policy, body_length, handoff_json, check_answer_contract, sentence_count, retrieval_status)
 
 
 async def live_report(settings, store, task, tools, budget, saver):
@@ -76,8 +76,7 @@ async def live_report(settings, store, task, tools, budget, saver):
             returned_ids = set(re.findall(r'[WDQM][a-f0-9]{12}', '\n'.join(str(m.content) for m in messages)))
             sources = [s for s in store.sources(task['id']) if s['evidence_id'] in returned_ids]
             bundle = validate_handoff(state['structured_response'], self.role, sources, task['request']['course_id'])
-            bundle['retrieval_status'] = {'obtained_source_count': len(sources),
-                'note': '已取得来源不等于字段通过交接；字段未确认或被过滤不能写成未取得正文。'}
+            bundle['retrieval_status'] = retrieval_status(sources)
             if self.role == 'sales':
                 bundle['tables'] = []
                 for message in messages:
@@ -213,11 +212,7 @@ async def live_report(settings, store, task, tools, budget, saver):
         chunks = []
         compact_bundles = [b | {'rejected': len(b['rejected'])} for b in tools.handoffs]
         async for chunk in model.astream([
-                {'role': 'system', 'content': prompt+'\n现在只生成最终回答，不调用工具。把先前草稿视为待纠正文稿，不是事实来源。'
-                    f"目标控制在{int(policy['max_characters']*.6)}字符内，引用编号不计。简短问题直接回答2至4句；"
-                    '需要月表时仅保留要求的数字表、核心差异及最多2项待确认。删除历史课程细节和重复范围说明，但保留必要适用限制。'
-                    '严格遵守max_sentences（如有），不另加标题、总结或未问字段。每个事实分句紧跟自身引用，原文引号逐字匹配。未知仅写尚未确认具体对象字段，不说已取得资料均无某标注。'
-                    '逐项解决boundary_issues：星期逐字遵循原摘录，不添加未问排课；匿名分组不可套具体课程。不能用排课摘录支持直播，不能从课时构成推断课件。无法支持的字段删去或写本次未确认。口径说明引用metric_rules的M编号。'},
+                {'role': 'system', 'content': prompt+revision_instruction(policy)},
                 {'role': 'user', 'content': handoff_json({'request': request, 'checked_handoffs': compact_bundles,
                     'draft_to_shorten': report, 'answer_policy': policy, 'boundary_issues': boundary_issues})}], config={'callbacks': [Usage()]}):
             answer.push(chunk, {'tags': ['answer_main']})

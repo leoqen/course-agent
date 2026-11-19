@@ -25,7 +25,7 @@ def _uncertain(text):
 
 
 def _negative(text, start):
-    return bool(re.search(r'(?:不提供|不含|不承诺|不保证|不能保证|无|非|不支持|不自动补)[^，；。]{0,8}$|'
+    return bool(re.search(r'(?:不提供|不含|不承诺|不保证|不能保证|没有|并无|无|非|不支持|不自动补)[^，；。]{0,8}$|'
                           r'不能用于[^，；。]{0,24}$', text[:start]))
 
 
@@ -224,11 +224,11 @@ def answer_policy(query, scope):
     limit = min(int(match.group(1)), 4000) if match else (
         650 if any(s in query for s in ['简短', '简洁', '简要', '表格即可', '几句话']) else
         1000 if scope in {'full', 'comparison'} else 650)
-    sentence_match = re.search(r'([一二三四五六七八九十]|\d{1,2})\s*句(?:话)?', query)
+    sentence_match = re.search(r'([一二两三四五六七八九十]|\d{1,2})\s*句(?:话)?', query)
     sentence_limit = None
     if sentence_match:
         number = sentence_match.group(1)
-        sentence_limit = int(number) if number.isdigit() else '一二三四五六七八九十'.index(number)+1
+        sentence_limit = int(number) if number.isdigit() else 2 if number == '两' else '一二三四五六七八九十'.index(number)+1
     return {'max_characters': limit, 'max_sentences': sentence_limit,
             'counting': '正文去引用编号及空白，不含来源附录',
             'instruction': '直接回答问题，少量表格或短段落；不重复调研范围/来源/发现章节，不输出内部工具名和编号说明。'}
@@ -252,8 +252,63 @@ def _citation_units(cell):
 
 def check_answer_contract(report, sources, bundles, policy):
     issues = check_answer_boundaries(report, sources, bundles)
+    issues.extend(check_retrieval_claims(report, sources))
+    issues.extend(check_month_comparisons(report, bundles))
     if policy.get('max_sentences') and sentence_count(report) > policy['max_sentences']:
         issues.append({'reason': '超出用户要求句数', 'actual': sentence_count(report), 'limit': policy['max_sentences']})
+    return issues
+
+
+def retrieval_status(sources):
+    """Describe retrieved material, independently of accepted fact extraction."""
+    network = [s for s in sources if s['kind'] == 'network']
+    return {'obtained_source_count': len(sources),
+            'page_text_count': sum(s.get('content_type') == 'page_text' for s in network),
+            'search_summary_count': sum(s.get('content_type') == 'search_summary' for s in network),
+            'note': '计数为证据片段数，不是独立网页数；正文或摘要不等于现行条款已确认。'
+                    '事实被过滤不代表没有取得正文。未知只针对具体对象字段，不总结为仅取得平台说明。'}
+
+
+def check_retrieval_claims(report, sources):
+    """Catch a narrow class of overbroad absence claims; not a page classifier."""
+    issues = []
+    status = retrieval_status(sources)
+    for number, line in enumerate(report.splitlines(), 1):
+        if re.search(r'(?:仅|只)(?:取得|获取|检索到|获得)(?:了|到)?平台(?:级)?', line):
+            issues.append({'line': number, 'reason': '将字段未知扩大为仅取得平台资料；只说明具体对象字段尚未确认'})
+        if status['page_text_count'] and re.search(r'(?:未|没有)(?:取得|获取|获得)(?:到)?任何(?:页面)?正文', line):
+            issues.append({'line': number, 'reason': '已取得网页正文片段，不能写成未取得任何正文'})
+    return issues
+
+
+def check_month_comparisons(report, bundles):
+    """Reject raw month-total rankings when one of the named months is partial."""
+    partial = set()
+    for bundle in bundles:
+        for table in bundle.get('tables', []):
+            if table.get('type') != 'monthly':
+                continue
+            for row in table['rows']:
+                start, end = row.get('start', ''), row.get('end_exclusive', '')
+                if start and end and (not start.endswith('-01') or not end.endswith('-01')):
+                    partial.add(int(row['month'][-2:]))
+    issues = []
+    if not partial:
+        return issues
+    for number, line in enumerate(report.splitlines(), 1):
+        for unit in _citation_units(line):
+            text = re.sub(CITATION, '', unit)
+            months = {int(m) for m in re.findall(r'(?<!\d)(?:20\d{2}[-年])?(1[0-2]|0?[1-9])月', text)}
+            if len(months) < 2 or not months & partial:
+                continue
+            if not re.search(r'高于|低于|多于|少于|增长|下降|增加|减少|上升|环比', text):
+                continue
+            if re.search(r'不能|不可|不宜|不应|不作|不做|无法', text) and not re.search(r'但|然而|不过', text):
+                continue
+            # An explicit daily metric is not a raw monthly total comparison.
+            if re.search(r'日均|每天|每日', text):
+                continue
+            issues.append({'line': number, 'reason': '不完整月份与其他月份不能直接按月总量排名或计算环比'})
     return issues
 
 
@@ -263,10 +318,20 @@ def check_answer_boundaries(report, sources, bundles):
     # Only accepted fact excerpts are used in multi-agent mode. A whole document
     # containing the word elsewhere must not validate the wrong fact's citation.
     excerpts = {}
+    entities = set()
     for bundle in bundles:
         for fact in bundle['facts']:
+            if fact.get('entity'):
+                entities.add(_entity_key(fact['entity']))
             for support in fact['supports']:
                 excerpts.setdefault(support['evidence_id'], []).append(support['quote'])
+                if support.get('entity_quote'):
+                    entities.add(_entity_key(support['entity_quote']))
+    def direct_quotes(cell):
+        # Exact names already anchored in accepted facts are labels, not prose
+        # quotations. A longer assertion containing a name is still checked.
+        return [q for q in re.findall(r'[“「]([^”」\n]+)[”」]', cell)
+                if _entity_key(q) not in entities]
     issues = []
     for line_number, line in enumerate(report.splitlines(), 1):
         cells = line.strip().strip('|').split('|') if line.lstrip().startswith('|') else [line]
@@ -277,7 +342,7 @@ def check_answer_boundaries(report, sources, bundles):
             if not ids:
                 # Long direct quotations should be attributable, even if other
                 # sentences in this paragraph happen to have valid citations.
-                if any(len(_flat(q)) >= 6 for q in re.findall(r'[“「]([^”」\n]+)[”」]', cell)):
+                if any(len(_flat(q)) >= 6 for q in direct_quotes(cell)):
                     issues.append({'line': line_number, 'reason': '原文引语缺少就近引用'})
                 if unsupported_terms(cell, ''):
                     issues.append({'line': line_number, 'reason': '方式或服务断言缺少就近引用'})
@@ -288,7 +353,7 @@ def check_answer_boundaries(report, sources, bundles):
                 quotes = ''.join((known.get(eid, {}).get('content', '')[:6000] or
                                   known.get(eid, {}).get('text', '')) for eid in ids)
             if any(known.get(eid, {}).get('kind') in {'network', 'rag'} for eid in ids):
-                for quoted in re.findall(r'[“「]([^”」\n]+)[”」]', cell):
+                for quoted in direct_quotes(cell):
                     if len(_flat(quoted)) >= 6 and not any(
                             _flat(quoted) in _flat(q) for eid in ids for q in excerpts.get(eid, [])
                             ) and (bundles or _flat(quoted) not in _flat(quotes)):
