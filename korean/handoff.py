@@ -39,7 +39,10 @@ def unsupported_terms(claim, quotes):
             for occurrence in re.finditer(term, clause):
                 negative = _negative(clause, occurrence.start())
                 # A qualified schedule is not a promise of permanent access.
-                if term == '永久' and '非永久固定' in clause and '通常' in quotes:
+                schedule_caveats = re.finditer(
+                    r'(?:非|并非|不(?:是|作|构成|代表|作为|意味着|应理解为|保证|承诺))\s*永久(?:固定|不变|排课|承诺)', clause)
+                if term == '永久' and '通常' in quotes and any(
+                        m.start() <= occurrence.start() < m.end() for m in schedule_caveats):
                     continue
                 supported = any(_negative(q, m.start()) == negative
                                 for q in _clauses(quotes) for m in re.finditer(term, q))

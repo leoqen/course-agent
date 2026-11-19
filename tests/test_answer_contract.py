@@ -160,3 +160,14 @@ def test_monthly_row_requires_both_queries_and_channel_requires_its_own_query():
                              'evidence_ids': [paid]}]}]
     assert check_sales_row_citations('| 自然咨询 | 69 | 205620.00 |', channels)
     assert not check_sales_row_citations('| 自然咨询 | 69 | 205620.00 | ['+paid+'] |', channels)
+
+
+def test_typical_schedule_caveat_does_not_authorize_permanent_services():
+    from korean.handoff import unsupported_terms
+    quote = '通常上课安排：周二、周四20:00—20:50。'
+    assert not unsupported_terms('通常安排，不构成永久承诺', quote)
+    assert not unsupported_terms('非永久固定', quote)
+    assert unsupported_terms('永久固定', quote) == ['永久']
+    assert unsupported_terms('不构成永久承诺', '每周二上课。') == ['永久']
+    assert unsupported_terms('不构成永久承诺，同时提供永久访问', quote) == ['永久']
+    assert '陪练' in unsupported_terms('不构成永久承诺，但提供永久一对一陪练', quote)
