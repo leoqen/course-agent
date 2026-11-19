@@ -1,5 +1,6 @@
 """Source adapters: Tavily, course RAG and read-only sales tools."""
 import asyncio
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,9 +17,17 @@ class ResearchTools:
         self.sales = Sales(settings, offline=settings.mode == 'offline')
         self.errors = []
         self.handoffs = []
+        requested = re.search(r'最多\s*([一二两三四五六七八九十]|\d{1,2})\s*次(?:联网)?搜索', task['request'].get('query', ''))
+        number = requested.group(1) if requested else None
+        self.search_limit = (int(number) if number and number.isdigit() else
+                             2 if number == '两' else '一二三四五六七八九十'.index(number)+1 if number else None)
 
     async def io(self, name, fn, search=False):
         for attempt in range(2):
+            if search and self.search_limit is not None and self.budget.searches >= self.search_limit:
+                self.store.event(self.tid, 'search_limit', '已达到用户指定搜索次数，使用已有证据整合')
+                return {'status': 'SEARCH_LIMIT_REACHED', 'results': [],
+                        'instruction': '已达到用户指定搜索次数，不再搜索；使用已取得证据，缺失字段明确尚未确认。'}
             self.budget.take('tools')
             if search:
                 self.budget.take('searches')
@@ -47,6 +56,8 @@ class ResearchTools:
                     r.raise_for_status()
                     return r.json()
             payload = await self.io('联网搜索', call, search=True)
+        if payload.get('status') == 'SEARCH_LIMIT_REACHED':
+            return payload
         items = []
         for r in payload.get('results', []):
             raw = r.get('raw_content')

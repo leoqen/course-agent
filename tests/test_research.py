@@ -172,6 +172,24 @@ def test_unconfigured_live_fails_before_paid_calls(settings):
         assert client.get('/api/tasks').json()==[]
 
 
+def test_uncited_unknown_response_is_saved_as_partial_but_fake_ids_still_fail(settings):
+    async def unknown(s, store, task, tools, budget, saver):
+        store.evidence(task['id'], 'network', {'title': '样例', 'url': 'https://example.org',
+            'content_type': 'search_summary', 'content': '课程列表'})
+        return '本次尚未确认生活口语课的现行完整售价。'
+    settings.mode = 'live'; settings.model = 'test'; settings.api_key = 'test'
+    with patch('korean.server.live_report', unknown), TestClient(create_app(settings)) as client:
+        tid = client.post('/api/task', json={'course_id': 'K01', 'competitors': ['机构'],
+            'research_scope': 'network'}).json()['task_id']
+        task = wait_task(client, tid)
+        assert task['status'] == 'PARTIAL'
+        assert '本次尚未确认生活口语课' in task['report']
+        assert task['metrics']['evidence']['cited'] == 0
+        assert {'tool': 'answer', 'type': 'MissingCitations'} in task['metrics']['source_errors']
+    with pytest.raises(ValueError):
+        validate_report('[W000000000000]', [], require_citations=False)
+
+
 def test_pdf_escapes_markup(tmp_path):
     file=tmp_path/'report.pdf'
     write_pdf(file,'中文报告\n<script>unsafe & text</script>')

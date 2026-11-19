@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from korean.config import ROOT, Settings
 from korean.handoff import (answer_policy, body_length, check_answer_contract,
-                            handoff_json, retrieval_status, sentence_count)
+                            handoff_json, retrieval_status, sentence_count, focus_handoff)
 from korean.prompts import COMMON, MAIN_PROMPT, revision_instruction
 from korean.runtime import normalize_citations, validate_report
 
@@ -30,7 +30,7 @@ def prepare_record(record):
         kind = {'network': 'network', 'course': 'rag', 'sales': 'sales'}[bundle['role']]
         bundle['retrieval_status'] = retrieval_status([s for s in sources if s['kind'] == kind])
         bundle['rejected'] = len(bundle['rejected'])
-        bundles.append(bundle)
+        bundles.append(focus_handoff(bundle, answer_policy(request['query'], request['research_scope'])))
     if not bundles:
         raise ValueError('Saved record has no specialist handoffs')
     return request, sources, bundles

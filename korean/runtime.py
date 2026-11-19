@@ -12,7 +12,8 @@ from .tools import ResearchTools
 from .streaming import AnswerStream
 from .prompts import COMMON, MAIN_PROMPT, revision_instruction
 from .handoff import (SpecialistResult, SalesResult, EXTRACTION_PROMPT, validate_handoff,
-                      answer_policy, body_length, handoff_json, check_answer_contract, sentence_count, retrieval_status)
+                      answer_policy, body_length, handoff_json, check_answer_contract, sentence_count,
+                      retrieval_status, focus_handoff)
 
 
 async def live_report(settings, store, task, tools, budget, saver):
@@ -99,13 +100,15 @@ async def live_report(settings, store, task, tools, budget, saver):
                             'evidence_ids': [value['evidence_id']], 'truncated': value['truncated']})
                 bundle['course_id'] = task['request']['course_id']
                 bundle['date_range'] = [task['request']['start_date'], task['request']['end_date']]
-            tools.handoffs.append(bundle)
-            store.event(task['id'], 'specialist_handoff', '专家结构化结果', bundle)
+            focused = focus_handoff(bundle, policy)
+            tools.handoffs.append(focused)
+            store.event(task['id'], 'specialist_handoff', '专家结构化结果', bundle | {
+                'selected_fact_count': len(focused['facts']), 'focus_fields': policy['focus_fields']})
             if bundle['rejected']:
                 tools.errors.append({'tool': self.role, 'type': 'HandoffRejected', 'count': len(bundle['rejected'])})
             # Rejected field names may themselves contain fabricated dates/claims.
             # Retain them in audit events, never forward them as synthesis material.
-            return {'structured_response': bundle | {'rejected': len(bundle['rejected'])}}
+            return {'structured_response': focused | {'rejected': len(bundle['rejected'])}}
 
     def protect(fn, name):
         async def run(**kwargs):
@@ -168,7 +171,8 @@ async def live_report(settings, store, task, tools, budget, saver):
     else:
         subs = [{'name': n, 'description': d, 'runnable': create_agent(specialist_model, tools=ts,
                 system_prompt=COMMON+'\n'+d+'\n'+EXTRACTION_PROMPT+'\n任务固定定位（不能改成竞品编号）：'+handoff_json({
-                    'own_course_id': task['request']['course_id'], 'request': task['request']}),
+                    'own_course_id': task['request']['course_id'], 'request': task['request'],
+                    'answer_policy': policy}),
                 response_format=ToolStrategy(SalesResult if n == 'sales' else SpecialistResult),
                 middleware=[Guard(), Handoff(n)])} for n, d, ts in specs]
         graph = create_deep_agent(model=model, tools=[], system_prompt=prompt, subagents=subs,
@@ -340,14 +344,14 @@ def normalize_citations(report, sources):
     return re.sub(r'(?<![A-Za-z0-9_\[])[WDQM][a-f0-9]{12}(?![A-Za-z0-9_\]])', replace, report)
 
 
-def validate_report(report, sources):
+def validate_report(report, sources, *, require_citations=True):
     known = {x['evidence_id'] for x in sources}
     cited = set(re.findall(r'\[([WDQM][a-f0-9]{12})\]', report))
     invalid = cited-known
     if invalid:
         raise ValueError('报告引用不存在的证据：'+','.join(sorted(invalid)))
     data_sources = [s for s in sources if s['kind'] != 'sales_rules']
-    if sources and not cited:
+    if sources and not cited and require_citations:
         raise ValueError('报告缺少可追溯的证据引用')
     return {'cited': len(cited), 'available': len(known), 'coverage': sorted({x['kind'] for x in data_sources}),
             'cited_coverage': sorted({x['kind'] for x in data_sources if x['evidence_id'] in cited}),

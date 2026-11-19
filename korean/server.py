@@ -66,10 +66,15 @@ def create_app(settings=None):
                             report = await live_report(s, store, task, tools, budget, saver)
                     sources = store.sources(tid)
                     report = normalize_citations(report, sources)
-                    quality = validate_report(report, sources)
+                    # Missing citations yield a reviewable PARTIAL response;
+                    # fabricated IDs remain an error even in this mode.
+                    quality = validate_report(report, sources, require_citations=False)
                     if not any(x['kind'] != 'sales_rules' for x in sources):
                         raise ValueError('未获取任何可用来源')
                     partial = bool(tools.errors)
+                    if not quality['cited']:
+                        tools.errors.append({'tool': 'answer', 'type': 'MissingCitations'})
+                        partial = True
                     scope = task['request'].get('research_scope', 'full')
                     expected = SCOPE_SOURCES[scope]
                     if expected-set(quality['cited_coverage']):

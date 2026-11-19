@@ -95,3 +95,68 @@ def test_partial_month_rankings_are_flagged_without_rejecting_tables_or_warnings
         {'month': '2026-08', 'start': '2026-08-01', 'end_exclusive': '2026-09-01'},
         {'month': '2026-09', 'start': '2026-09-01', 'end_exclusive': '2026-10-01'}]}]}]
     assert not check_month_comparisons('9月订单高于8月。', full)
+
+
+
+def test_explicit_field_projection_preserves_source_and_audit_bundle():
+    from korean.handoff import focus_handoff
+    from copy import deepcopy
+    policy = answer_policy('只比较适用基础和现行完整售价；不展开其他字段。', 'full')
+    assert set(policy['focus_fields']) == {'基础', '价格'} and policy['current_only']
+    bundle = {'facts': [
+        {'field': '适合基础', 'value': '能拼读', 'applicability': 'current'},
+        {'field': '售价', 'value': '2480元', 'applicability': 'current'},
+        {'field': '课时', 'value': '32节', 'applicability': 'current'},
+        {'field': '售价', 'value': '2300元', 'applicability': 'historical'}],
+        'unknowns': [{'field': '现行售价', 'entity': '口语课'}, {'field': '答疑', 'entity': '口语课'}]}
+    original = deepcopy(bundle)
+    focused = focus_handoff(bundle, policy)
+    assert [f['field'] for f in focused['facts']] == ['适合基础', '售价']
+    assert len(focused['unknowns']) == 1
+    assert bundle == original
+    assert check_answer_contract('2480元，含32节正式直播课，每节50分钟。', [], [], policy)
+    assert not check_answer_contract('2480元。基础为能拼读。', [], [], policy)
+    assert not check_answer_contract('32节课，每节50分钟。', [], [], answer_policy('比较价格与课时','full'))
+
+
+def test_current_only_does_not_turn_necessary_caveat_into_history_error():
+    policy = answer_policy('现行完整售价在200字内说明。', 'network')
+    assert check_answer_contract('“历史韩语训练营”已下架，属历史班期。', [], [], policy)
+    assert not check_answer_contract('历史班不能替代现行条款。', [], [], policy)
+    assert not answer_policy('比较历史班与现行班价格', 'network')['current_only']
+
+
+def test_focus_excludes_negative_and_length_instructions():
+    policy = answer_policy('请只给入学基础、学习目标和不承诺的效果，最多三句话，每句引用，不谈收费、回放、退费。', 'course')
+    assert set(policy['focus_fields']) == {'基础', '目标', '效果'}
+    assert set(answer_policy('只给价格，不要展开课时和答疑。', 'course')['focus_fields']) == {'价格'}
+
+
+def test_unknown_scope_checks_global_findings_and_keeps_specific_unknowns():
+    from korean.handoff import check_unknown_scope
+    bundles = [{'unknowns': [{'subject': 'competitor_course', 'entity': '生活口语班', 'field': '完整售价'}]}]
+    assert check_unknown_scope('本次未确认沪江网校任何一门韩语口语课程的现行完整售价。', bundles)
+    assert check_unknown_scope('尚未确认所有韩语课程的课时。', bundles)
+    assert not check_unknown_scope('本次尚未确认生活口语班的现行完整售价。', bundles)
+    assert not check_unknown_scope('不能声称所有课程都未确认。', bundles)
+    assert not check_unknown_scope('所有课程都需分别确认，不能据此推断。', bundles)
+
+
+def test_platform_service_is_not_equated_to_tutoring_and_positive_claim_still_fails():
+    policy = answer_policy('简短回答平台时效', 'network')
+    assert not check_answer_contract('平台答疑不等同于某门课程的一对一陪练。', [], [], policy)
+    assert check_answer_contract('平台答疑不等同于陪练，但课程提供一对一陪练。', [], [], policy)
+
+
+def test_monthly_row_requires_both_queries_and_channel_requires_its_own_query():
+    from korean.handoff import check_sales_row_citations
+    paid, refund = 'Q111111111111', 'Q222222222222'
+    monthly = [{'tables': [{'type': 'monthly', 'rows': [{'month': '2026-05',
+        'start': '2026-05-01', 'evidence_ids': [paid, refund]}]}]}]
+    assert check_sales_row_citations('| 2026-05 | 173 | 290640 | 10080 | 280560 |', monthly)
+    assert check_sales_row_citations('| 2026-05 | 173 | 290640 | ['+paid+'] |', monthly)
+    assert not check_sales_row_citations('| 05-01至05-31 | 173 | 280560 | ['+paid+']['+refund+'] |', monthly)
+    channels = [{'tables': [{'type': 'channels', 'rows': [['自然咨询', 69, '205620.00']],
+                             'evidence_ids': [paid]}]}]
+    assert check_sales_row_citations('| 自然咨询 | 69 | 205620.00 |', channels)
+    assert not check_sales_row_citations('| 自然咨询 | 69 | 205620.00 | ['+paid+'] |', channels)

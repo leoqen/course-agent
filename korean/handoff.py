@@ -21,7 +21,7 @@ def _clauses(text):
 def _uncertain(text):
     return bool(re.search(r'本次未|本次已展示片段未|尚未确认|未确认|未说明|不明|未知|待确认|未提(?:及)?|未见|'
                           r'不能(?:直接)?(?:证明|推出|等同|视为)|不能据此|不代表|不意味着|'
-                          r'未就|无法(?:确认|证明)|不等于|并非.*承诺', text))
+                          r'未就|无法(?:确认|证明)|不等(?:同)?于|并非.*承诺', text))
 
 
 def _negative(text, start):
@@ -137,6 +137,7 @@ unknowns只记录用户所问且尚未确认的对象和字段。reason不得断
 销售专家facts与unknowns均返回空数组：平台会将你实际调用的统计工具结果、表结构限制整理为结构化表格。
 只提取当前请求需要的字段，不展开其他课程、不作因果分析，不生成重复来源清单。conditions只保留本字段的必要限制，不能顺带展开回放、教材、退费、排课等未问字段。平台答疑问题只需时效、平台适用范围和不能推断课程陪练，无需提取历史班型及整份平台规则。
 network只返回竞品字段（包括unknowns），course只返回自家字段（包括unknowns）；不要替另一个专家补充缺失项。
+任务answer_policy包含focus_fields和current_only。明确只问基础与售价时，价格value只交付金额及必要价格条件，不把同一摘录的课次、时长、直播附加进去；课次是另一个字段。只问现行完整售价时，不提取历史班详情，不单列平台价格规则；用最相关已定位课程的unknowns说明未确认字段。摘录仍须逐字，不能为了精简改写原文。
 '''
 
 
@@ -229,7 +230,20 @@ def answer_policy(query, scope):
     if sentence_match:
         number = sentence_match.group(1)
         sentence_limit = int(number) if number.isdigit() else 2 if number == '两' else '一二三四五六七八九十'.index(number)+1
+    focus = re.search(r'(?:只|仅)(?:比较|给出|给|回答|说明)\s*([^。！？；;\n]+)', query)
+    aliases = {'基础': ('基础', '适用人群', '适合谁'), '价格': ('售价', '价格', '收费', '学费'),
+               '目标': ('学习目标', '目标'), '效果': ('效果', '承诺'),
+               '课时': ('课时', '课次', '时长'), '方式': ('方式', '直播', '录播'),
+               '排课': ('排课', '星期', '几点'), '服务': ('服务', '答疑', '陪练', '回放')}
+    # The following length/negative instructions are not requested fields.
+    focus_text = re.split(r'[,，](?:最多|最少|每|不|别|请)|不谈|不展开|不要|无需',
+                          focus.group(1), maxsplit=1)[0] if focus else ''
+    focus_fields = [field for field, words in aliases.items()
+                    if any(word in focus_text for word in words)]
     return {'max_characters': limit, 'max_sentences': sentence_limit,
+            'focus_fields': focus_fields,
+            'current_only': bool(re.search(r'现行|当前|现价', query)) and not bool(
+                re.search(r'(?:比较|列出|介绍|调查|查询|对比)(?:一下)?历史', query)),
             'counting': '正文去引用编号及空白，不含来源附录',
             'instruction': '直接回答问题，少量表格或短段落；不重复调研范围/来源/发现章节，不输出内部工具名和编号说明。'}
 
@@ -254,9 +268,90 @@ def check_answer_contract(report, sources, bundles, policy):
     issues = check_answer_boundaries(report, sources, bundles)
     issues.extend(check_retrieval_claims(report, sources))
     issues.extend(check_month_comparisons(report, bundles))
+    issues.extend(check_answer_focus(report, policy))
+    issues.extend(check_unknown_scope(report, bundles))
+    issues.extend(check_sales_row_citations(report, bundles))
     if policy.get('max_sentences') and sentence_count(report) > policy['max_sentences']:
         issues.append({'reason': '超出用户要求句数', 'actual': sentence_count(report), 'limit': policy['max_sentences']})
     return issues
+
+
+def check_sales_row_citations(report, bundles):
+    """Check identifiable Markdown rows, not just report-wide SQL coverage.
+
+    This verifies reference placement only; numbers still need independent
+    reference/replay checks. Prose and unrecognized row formats are not certified.
+    """
+    issues = []
+    lines = [(i, line) for i, line in enumerate(report.splitlines(), 1)
+             if line.lstrip().startswith('|')]
+    for bundle in bundles:
+        for table in bundle.get('tables', []):
+            for row in table.get('rows', []):
+                if table.get('type') == 'monthly':
+                    labels = [row['month'], row.get('start', '')[5:]]
+                    required = set(row.get('evidence_ids', []))
+                elif table.get('type') == 'channels':
+                    labels = [str(row[0])]
+                    required = set(table.get('evidence_ids', []))
+                else:
+                    continue
+                for number, line in lines:
+                    # At least two data numbers distinguish a result row from
+                    # an interval heading embedded in a Markdown table.
+                    if any(label and label in line for label in labels) and len(re.findall(r'\d+', line)) >= 2:
+                        if required - set(re.findall(CITATION, line)):
+                            issues.append({'line': number, 'reason': '销售表格行缺少对应SQL引用',
+                                           'required_evidence_ids': sorted(required)})
+    return issues
+
+
+def check_unknown_scope(report, bundles):
+    """A missing field for retrieved courses is not a platform-wide finding."""
+    if not any(u.get('subject') == 'competitor_course'
+               for b in bundles for u in b.get('unknowns', [])):
+        return []
+    issues = []
+    for clause in _clauses(report):
+        # Keep this narrow: warnings such as “不能声称所有课程都未确认”
+        # and statements about one named course must remain valid.
+        if re.search(r'(?:本次)?(?:尚未|未能|未)确认[^。！？]{0,40}(?:任何一门|所有|全部)(?:[^。！？]{0,12}课程|[^。！？]{0,8}班)', clause):
+            issues.append({'reason': '将具体课程的未知字段扩大为全平台结论，请只写已定位对象的具体字段尚未确认'})
+    return issues
+
+
+def check_answer_focus(report, policy):
+    """Limited explicit-only contracts; do not infer an exhaustive user intent."""
+    issues = []
+    fields = set(policy.get('focus_fields', []))
+    if fields and '课时' not in fields:
+        if re.search(r'\d+\s*节(?:正式)?(?:直播|录播)?课|每节\s*\d+\s*分钟|\d+\s*课时', report):
+            issues.append({'reason': '展开明确范围之外的课次或时长', 'focus_fields': sorted(fields)})
+    # Saying historical prices cannot replace current prices is necessary;
+    # enumerating a dated/withdrawn course is not requested by current-only queries.
+    if policy.get('current_only'):
+        for number, line in enumerate(report.splitlines(), 1):
+            if re.search(r'[“「][^”」\n]{4,}[”」].{0,24}(?:已下架|历史班期)', line):
+                issues.append({'line': number, 'reason': '现行字段问题展开未问的历史课程，请仅保留具体对象的待确认字段'})
+    return issues
+
+
+def focus_handoff(bundle, policy):
+    """Project explicit requested fields without rewriting values or quotations.
+
+    The full bundle stays in audit events. Selection alone is not validation.
+    """
+    fields = set(policy.get('focus_fields', []))
+    aliases = {'基础': r'基础|适合|人群|入学', '价格': r'售价|价格|收费|学费|标价',
+               '目标': r'目标', '效果': r'效果|承诺|保证|通过', '课时': r'课时|课次|时长',
+               '方式': r'方式|形式', '排课': r'排课|星期|周期', '服务': r'服务|答疑|陪练|回放'}
+    def wanted(item):
+        return not fields or any(re.search(aliases[field], item['field']) for field in fields)
+    facts = [f for f in bundle['facts'] if wanted(f)]
+    if policy.get('current_only'):
+        facts = [f for f in facts if f.get('applicability') != 'historical']
+    return bundle | {'facts': facts, 'unknowns': [u for u in bundle.get('unknowns', []) if wanted(u)],
+                     'focus_note': '仅交付所问字段；值及条件仍须按原文，引用摘录的其他信息不自动成为回答字段。'}
 
 
 def retrieval_status(sources):

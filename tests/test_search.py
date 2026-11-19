@@ -46,3 +46,23 @@ async def test_live_search_sections_use_separate_ids_and_only_visible_prefix(tmp
     assert all(i['section_scoped'] and i['model_excerpt_truncated'] for i in items)
     assert '隐藏班型' not in str(items)
     assert [s['section_path'] for s in store.sources(task['id'])]==[i['section_path'] for i in items]
+
+
+@pytest.mark.asyncio
+async def test_user_search_limit_counts_provider_retries_and_blocks_extra_calls(tmp_path):
+    settings = Settings(data=tmp_path, mode='live', tavily_key='test-search-key')
+    store = Store(tmp_path)
+    task = store.create(TaskRequest(course_id='K01', competitors=['示例'], research_scope='network', query='最多两次搜索'))
+    calls = []
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(503 if len(calls) == 1 else 200, json={'results': []})
+    real_client = httpx.AsyncClient
+    budget = Budget(settings)
+    tools = ResearchTools(settings, store, task, budget)
+    with patch('korean.tools.httpx.AsyncClient', side_effect=lambda **kwargs:
+               real_client(transport=httpx.MockTransport(handler), **kwargs)):
+        assert await tools.search('第一次') == []
+        assert (await tools.search('不应发出'))['status'] == 'SEARCH_LIMIT_REACHED'
+    assert len(calls) == budget.searches == 2
+    assert budget.tools == 2
