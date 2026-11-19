@@ -48,3 +48,25 @@ def test_synthesis_replay_keeps_recorded_tables_and_limits_separate_from_coverag
     _, quality = assess('一。二。三。[D111111111111]', request, sources, bundles)
     assert quality['citations']['cited_coverage'] == ['rag']
     assert quality['boundary_issues'][0]['reason'] == '超出用户要求句数'
+
+
+@pytest.mark.asyncio
+async def test_acceptance_does_not_count_appendix_as_body_coverage(tmp_path):
+    import json
+    from scripts.acceptance_15 import live_case
+    task = {'status': 'PARTIAL', 'report': '本次尚未确认具体课程售价。\n## 本次来源与查询附录\n[W111111111111]',
+            'metrics': {'mode': 'live'}}
+    source = {'kind': 'network', 'evidence_id': 'W111111111111'}
+    def handle(request):
+        if request.method == 'POST':
+            return httpx.Response(202, json={'task_id': 'test'})
+        if request.url.path.endswith('/evidence'):
+            return httpx.Response(200, json=[source])
+        if request.url.path.endswith('/events'):
+            return httpx.Response(200, json=[])
+        return httpx.Response(200, json=task)
+    case = {'id': 'R04', 'course_id': 'K01', 'scope': 'network', 'query': '现价'}
+    async with httpx.AsyncClient(base_url='http://test', transport=httpx.MockTransport(handle)) as client:
+        await live_case(client, case, tmp_path, Settings(), {'orders': [], 'refunds': []})
+    result = json.loads((tmp_path/'R04.json').read_text('utf-8'))
+    assert not result['mechanical_checks']['cited_sources']

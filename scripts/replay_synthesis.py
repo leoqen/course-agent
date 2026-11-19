@@ -17,6 +17,8 @@ from korean.handoff import (answer_policy, body_length, check_answer_contract,
                             handoff_json, retrieval_status, sentence_count, focus_handoff)
 from korean.prompts import COMMON, MAIN_PROMPT, revision_instruction
 from korean.runtime import normalize_citations, validate_report
+from korean.report_tables import (sales_tables, render_sales_tables, compose_sales_answer,
+                                  sales_render_instruction)
 
 
 def prepare_record(record):
@@ -38,10 +40,12 @@ def prepare_record(record):
 
 def assess(report, request, sources, bundles):
     policy = answer_policy(request['query'], request['research_scope'])
+    tables, rules_id = sales_tables(bundles)
+    report, render_issues = compose_sales_answer(report, render_sales_tables(tables, rules_id))
     report = normalize_citations(report, sources)
     return report, {'characters': body_length(report), 'max_characters': policy['max_characters'],
                     'sentences': sentence_count(report), 'max_sentences': policy['max_sentences'],
-                    'boundary_issues': check_answer_contract(report, sources, bundles, policy),
+                    'boundary_issues': check_answer_contract(report, sources, bundles, policy)+render_issues,
                     'citations': validate_report(report, sources)}
 
 
@@ -65,6 +69,9 @@ async def run(args):
         request, sources, bundles = prepare_record(record)
         policy = answer_policy(request['query'], request['research_scope'])
         prompt = COMMON + MAIN_PROMPT + '\n回答约定：' + handoff_json(policy)
+        tables, rules_id = sales_tables(bundles)
+        if tables:
+            prompt += sales_render_instruction(render_sales_tables(tables, rules_id), policy['max_characters'])
         value = {'case': record['case'], 'source_record': str(path.relative_to(ROOT)),
                  'source_sha256': hashlib.sha256(raw).hexdigest(),
                  'code_hashes': {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()

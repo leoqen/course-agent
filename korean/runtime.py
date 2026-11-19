@@ -10,6 +10,8 @@ from .models import SCOPE_SOURCES
 from .budget import Budget, BudgetExceeded
 from .tools import ResearchTools
 from .streaming import AnswerStream
+from .report_tables import (render_sales_tables, compose_sales_answer,
+                            sales_render_instruction, SalesMarkerStream, SALES_MARKER)
 from .prompts import COMMON, MAIN_PROMPT, revision_instruction
 from .handoff import (SpecialistResult, SalesResult, EXTRACTION_PROMPT, validate_handoff,
                       answer_policy, body_length, handoff_json, check_answer_contract, sentence_count,
@@ -101,6 +103,9 @@ async def live_report(settings, store, task, tools, budget, saver):
                 bundle['course_id'] = task['request']['course_id']
                 bundle['date_range'] = [task['request']['start_date'], task['request']['end_date']]
             focused = focus_handoff(bundle, policy)
+            if self.role == 'sales' and tools.sales_tables:
+                focused['presentation'] = sales_render_instruction(
+                    render_sales_tables(tools.sales_tables, tools.sales_rules_id), policy['max_characters'])
             tools.handoffs.append(focused)
             store.event(task['id'], 'specialist_handoff', '专家结构化结果', bundle | {
                 'selected_fact_count': len(focused['facts']), 'focus_fields': policy['focus_fields']})
@@ -165,6 +170,12 @@ async def live_report(settings, store, task, tools, budget, saver):
     specs = [spec for spec in specs if spec[0] in allowed_roles]
     policy = answer_policy(task['request']['query'], task['request'].get('research_scope', 'full'))
     prompt = COMMON + MAIN_PROMPT + '\n回答篇幅约定：'+handoff_json(policy)
+    if 'sales' in allowed_sources:
+        prompt += ('\n本任务采用程序呈现销售表格：执行销售查询后只用 '+SALES_MARKER+
+                   ' 独立一行恰好一次放置表格，不自己写销售表，不重复销售数字。'
+                   '主Agent负责课程比较与必要解释，表格同样计入总字数。'
+                   '程序表格已含合成数据说明及一句统计口径，不要重复这些说明。'
+                   '纯销售只要求表和一句口径时仅输出标记；需要解释ROI等能力时才附加M引用解释。')
     if task['request']['analysis_mode'] == 'single':
         graph = create_agent(model, tools=[tool for _, _, role_tools in specs for tool in role_tools],
                              system_prompt=prompt, middleware=[Guard()], checkpointer=saver)
@@ -185,7 +196,13 @@ async def live_report(settings, store, task, tools, budget, saver):
     graph_input = {'messages': [{'role': 'user', 'content': json.dumps({'request': request,
         'course_locator': {'course_id': request['course_id'], 'name': COURSES[request['course_id']]['name']}, 'data_range': ['2026-05-01','2026-11-01'],
         'history_context_only': history, 'instruction': '表单范围优先；历史只供上下文，事实必须重新检索。'}, ensure_ascii=False)}]}
-    answer = AnswerStream(store, task['id'])
+    def table_text():
+        return render_sales_tables(tools.sales_tables, tools.sales_rules_id)
+
+    def compose(text):
+        return compose_sales_answer(text, table_text())
+
+    answer = AnswerStream(store, task['id'], SalesMarkerStream(table_text) if 'sales' in allowed_sources else None)
     result = None
     try:
         async for namespace, mode, value in graph.astream(graph_input,
@@ -203,11 +220,13 @@ async def live_report(settings, store, task, tools, budget, saver):
     if result is None:
         raise ValueError('模型未返回回答')
     msg = result['messages'][-1].content
-    report = msg if isinstance(msg, str) else json.dumps(msg, ensure_ascii=False)
+    narrative = msg if isinstance(msg, str) else json.dumps(msg, ensure_ascii=False)
+    report, render_issues = compose(narrative)
     # One bounded rewrite, with no source calls, if the answer exceeds its budget.
     # Never truncate the report and risk removing a qualifier or citation.
     revised = False
     boundary_issues = check_answer_contract(report, store.sources(task['id']), tools.handoffs, policy)
+    boundary_issues.extend(render_issues)
     if body_length(report) > policy['max_characters'] or boundary_issues:
         revised = True
         answer.clear()
@@ -216,16 +235,25 @@ async def live_report(settings, store, task, tools, budget, saver):
         chunks = []
         compact_bundles = [b | {'rejected': len(b['rejected'])} for b in tools.handoffs]
         async for chunk in model.astream([
-                {'role': 'system', 'content': prompt+revision_instruction(policy)},
+                {'role': 'system', 'content': prompt+revision_instruction(policy)+
+                    (sales_render_instruction(table_text(), policy['max_characters']) if table_text() else '')},
                 {'role': 'user', 'content': handoff_json({'request': request, 'checked_handoffs': compact_bundles,
                     'draft_to_shorten': report, 'answer_policy': policy, 'boundary_issues': boundary_issues})}], config={'callbacks': [Usage()]}):
             answer.push(chunk, {'tags': ['answer_main']})
             if isinstance(chunk.content, str):
                 chunks.append(chunk.content)
         answer.flush()
-        report = ''.join(chunks)
+        narrative = ''.join(chunks)
+        report, render_issues = compose(narrative)
     length = body_length(report)
     boundary_issues = check_answer_contract(report, store.sources(task['id']), tools.handoffs, policy)
+    boundary_issues.extend(render_issues)
+    if table_text():
+        # Authoritative final draft also covers omitted/split/malformed slots.
+        store.answer_chunk(task['id'], report, reset=True)
+        store.event(task['id'], 'sales_table_rendered', '已呈现查询结果与原始引用', {
+            'table_count': len(tools.sales_tables), 'characters': body_length(table_text()),
+            'model_writes_values': False})
     store.event(task['id'], 'answer_quality', '回答篇幅检查', {
         'characters': length, 'max_characters': policy['max_characters'], 'revised': revised,
         'within_limit': length <= policy['max_characters'], 'boundary_issues': boundary_issues,

@@ -1,0 +1,108 @@
+{
+  "type": "developer review, not external blind review",
+  "frozen_manifest_sha256": "68f962515c6ebc8a8e116f63ad2736fde760de43a6ce143fcf4015484cd58ec0",
+  "cases": [
+    {
+      "id": "R01",
+      "status": "SUCCEEDED",
+      "review": "pass",
+      "body_characters": 150,
+      "max_characters": 650,
+      "body_cited_coverage": [
+        "rag"
+      ],
+      "numeric_fields_checked": 0,
+      "numeric_values_match": null,
+      "seconds": 26.09,
+      "model_calls": 4,
+      "search_calls": 0,
+      "source_sha256": "17bf1d316e780cc51cdd5ad568739922163f3c9e5a428196e6f9065f6a704706",
+      "notes": [
+        "TOPIK I听力阅读、不适用TOPIK II、入班前水平评估逐项有对应摘录；两句。"
+      ]
+    },
+    {
+      "id": "R02",
+      "status": "SUCCEEDED",
+      "review": "pass",
+      "body_characters": 242,
+      "max_characters": 350,
+      "body_cited_coverage": [
+        "sales"
+      ],
+      "numeric_fields_checked": 12,
+      "numeric_values_match": true,
+      "seconds": 5.39,
+      "model_calls": 4,
+      "search_calls": 0,
+      "source_sha256": "ccf6f2b993b10dade237c9dca1960d958f86fac820b642808411af6d16fe9fbc",
+      "notes": [
+        "三个月12项数值逐字段与独立Decimal参考一致；行内双Q引用，部分月区间及左闭右开正确，242/350字。"
+      ]
+    },
+    {
+      "id": "R03",
+      "status": "SUCCEEDED",
+      "review": "pass",
+      "body_characters": 173,
+      "max_characters": 300,
+      "body_cited_coverage": [
+        "sales"
+      ],
+      "numeric_fields_checked": 6,
+      "numeric_values_match": true,
+      "seconds": 6.02,
+      "model_calls": 4,
+      "search_calls": 0,
+      "source_sha256": "d42ee713db80f912708a226e1e03ff31b868bb94f5478e3d84c04657618361bb",
+      "notes": [
+        "三个渠道6项数值逐字段与独立参考一致；Q用于表行，M用于缺咨询量说明；无额外退款查询，173/300字；提到未问ROI，略冗余。"
+      ]
+    },
+    {
+      "id": "R04",
+      "status": "PARTIAL",
+      "review": "needs_fix",
+      "body_characters": 428,
+      "max_characters": 500,
+      "body_cited_coverage": [
+        "rag",
+        "sales"
+      ],
+      "numeric_fields_checked": 12,
+      "numeric_values_match": true,
+      "seconds": 17.09,
+      "model_calls": 10,
+      "search_calls": 2,
+      "source_sha256": "1f2ea32fe52c0ad3138c9b8f7dac95253eb07a46c8508980675c4a41d694b0b0",
+      "notes": [
+        "三个月12值正确，SQL重放一致，428/500字。",
+        "网络两项摘录被拒收，最终仅具体课程未知，缺网络正文引用；应保留PARTIAL，不硬补引用；额外ROI说明可精简。"
+      ]
+    },
+    {
+      "id": "R05",
+      "status": "SUCCEEDED",
+      "review": "pass",
+      "body_characters": 403,
+      "max_characters": 550,
+      "body_cited_coverage": [
+        "network",
+        "rag",
+        "sales"
+      ],
+      "numeric_fields_checked": 12,
+      "numeric_values_match": true,
+      "seconds": 19.27,
+      "model_calls": 9,
+      "search_calls": 2,
+      "source_sha256": "d9a18f7246cab347d67412c2bee0b59dcc73fdbb04b3d202a2d8cdd57595f003",
+      "notes": [
+        "基础发音词汇、水平评估和2980元逐项对照RAG原文。",
+        "网页同一片段定位韩语TOPIK I初级强化，列表免费仅记录展示值，未当完整课程售价。",
+        "三个月12项数值逐字段匹配独立参考，双Q行引用、部分月边界正确，三类正文引用齐全，无因果推断。"
+      ]
+    }
+  ],
+  "note": "Body coverage recomputed excluding appended source index. Original task files retained unchanged. r22 code frozen; later custom-SQL wording and evaluator fixes are not covered by this frozen online run."
+}

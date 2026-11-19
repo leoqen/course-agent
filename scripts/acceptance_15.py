@@ -137,7 +137,8 @@ async def live_case(client, case, folder, s, source):
     events=(await client.get(f'/api/tasks/{tid}/events')).json()
     checks={'completed':task['status']=='SUCCEEDED','real_mode':task['metrics'].get('mode')=='live'}
     try:
-        quality=validate_report(task['report'],sources)
+        # The auto-appended source index is not a claim's body citation.
+        quality=validate_report(task['report'].split('\n## 本次来源与查询附录')[0],sources)
         checks['cited_sources']=SCOPE_SOURCES[case['scope']] <= set(quality['cited_coverage'])
     except ValueError:
         checks['cited_sources']=False

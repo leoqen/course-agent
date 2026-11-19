@@ -302,7 +302,8 @@ def check_sales_row_citations(report, bundles):
                 for number, line in lines:
                     # At least two data numbers distinguish a result row from
                     # an interval heading embedded in a Markdown table.
-                    if any(label and label in line for label in labels) and len(re.findall(r'\d+', line)) >= 2:
+                    first_cell = line.strip().strip('|').split('|')[0].strip()
+                    if any(label and first_cell.startswith(label) for label in labels) and len(re.findall(r'\d+', line)) >= 2:
                         if required - set(re.findall(CITATION, line)):
                             issues.append({'line': number, 'reason': '销售表格行缺少对应SQL引用',
                                            'required_evidence_ids': sorted(required)})

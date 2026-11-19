@@ -31,7 +31,8 @@ class ScriptedModel(BaseChatModel):
             import re
             text='\n'.join(str(t.content) for t in tools)
             ids=set(re.findall(r'[WDQM][a-f0-9]{12}',text))
-            answer=AIMessage(content='合成验证数据。'+''.join('['+i+']' for i in sorted(ids)),usage_metadata={'input_tokens':10,'output_tokens':5,'total_tokens':15})
+            answer=AIMessage(content='合成验证数据。'+''.join('['+i+']' for i in sorted(ids))+
+                ('\n[[SALES_TABLES]]' if 'sales' in roles else ''),usage_metadata={'input_tokens':10,'output_tokens':5,'total_tokens':15})
         else:
             if '分析自家订单' in system:
                 if not tools:return ChatResult(generations=[ChatGeneration(message=call('sales_schema',{}))])
@@ -205,3 +206,31 @@ async def test_wrong_weekday_in_synthesis_is_revised_once_with_original_evidence
     quality=next(e['data'] for e in store.events(task['id']) if e['event']=='answer_quality')
     assert not quality['boundary_issues']
     assert not tools.errors
+
+
+class MonthlyModel(ScriptedModel):
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        if '分析自家订单' in str(messages[0].content):
+            tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
+            if len(tool_messages) == 1:
+                return ChatResult(generations=[ChatGeneration(message=AIMessage(content='', tool_calls=[{
+                    'name': 'sales_monthly', 'args': {}, 'id': 'monthly'}],
+                    usage_metadata={'input_tokens': 10, 'output_tokens': 5, 'total_tokens': 15}))])
+        return super()._generate(messages, stop, run_manager, **kwargs)
+
+
+@pytest.mark.asyncio
+async def test_real_graph_renders_sales_table_into_final_draft_and_quality(tmp_path):
+    s = Settings(data=tmp_path, mode='offline', model='test-model', api_key='test')
+    store = Store(tmp_path)
+    task = store.create(TaskRequest(course_id='K01', competitors=['离线示例机构'],
+        start_date='2026-05-01', end_date='2026-06-01'))
+    budget = Budget(s); tools = ResearchTools(s, store, task, budget)
+    async with AsyncSqliteSaver.from_conn_string(str(tmp_path/'checkpoints.sqlite')) as saver:
+        with patch('langchain_openai.ChatOpenAI', return_value=MonthlyModel()):
+            report = await live_report(s, store, task, tools, budget, saver)
+    assert '| 2026-05-01～06-01 | 173 | 290640.00 | 10080.00 | 280560.00 |' in report
+    assert '[[SALES_TABLES]]' not in report
+    assert store.get(task['id'])['draft'] == report
+    quality = next(e['data'] for e in store.events(task['id']) if e['event'] == 'answer_quality')
+    assert not quality['boundary_issues']

@@ -26,6 +26,8 @@
 
 本轮回答可靠性修复、预检与证据回放见 [定向回归](reliability-regression.md)。
 
+销售直接呈现链路：`tools.py` 登记实际表格与证据 → `report_tables.py` 保留原值生成带引用Markdown → `runtime.py` 合并模型解释并检查整份预算 → `streaming.py` 转换跨分块标记 → `server.py` 保存及按需导出。可对照 `tests/test_report_tables.py`、`tests/test_report_delivery.py` 与真实图测试讲解。效果与限制见 [销售表与新题验收](report-stability.md)。
+
 ## 如何介绍自己的工作
 
 介绍业务问题、设计选择、实际修改和验证证据。可以说明“使用 DeepAgents / LangGraph 实现课程经营调研应用，参考公开项目的多专家调度思路，使用 Codex 辅助开发”，再展开销售口径、证据交接、状态恢复等能亲自讲解的实现。

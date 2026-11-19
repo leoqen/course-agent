@@ -8,6 +8,7 @@ import httpx
 
 from .sales import Sales
 from .web_context import web_sections
+from .report_tables import remember_table
 
 
 class ResearchTools:
@@ -17,6 +18,8 @@ class ResearchTools:
         self.sales = Sales(settings, offline=settings.mode == 'offline')
         self.errors = []
         self.handoffs = []
+        self.sales_tables = []
+        self.sales_rules_id = None
         requested = re.search(r'最多\s*([一二两三四五六七八九十]|\d{1,2})\s*次(?:联网)?搜索', task['request'].get('query', ''))
         number = requested.group(1) if requested else None
         self.search_limit = (int(number) if number and number.isdigit() else
@@ -111,6 +114,7 @@ class ResearchTools:
                 'title': '销售指标口径与数据能力', 'rules': value['rules'],
                 'ddl': value['ddl'], 'date_range': value['date_range'],
                 'source_type': 'application_contract', 'synthetic': True})
+            self.sales_rules_id = rules['evidence_id']
             return value | {'rules_evidence': rules}
         return await self.io('销售表结构与统计口径', call)
 
@@ -118,7 +122,11 @@ class ResearchTools:
         """Execute one bounded read-only SELECT and preserve the actual result as evidence."""
         async def call():
             value = await asyncio.to_thread(self.sales.query, query)
-            return self.store.evidence(self.tid, 'sales', value)
+            saved = self.store.evidence(self.tid, 'sales', value)
+            remember_table(self.sales_tables, {'type': 'custom_sql', 'columns': saved['columns'],
+                'rows': saved['rows'], 'sql': saved['sql'], 'evidence_ids': [saved['evidence_id']],
+                'truncated': saved['truncated']})
+            return saved
         return await self.io('销售数据库查询', call)
 
     async def monthly(self):
@@ -128,6 +136,9 @@ class ResearchTools:
             rows = await asyncio.to_thread(self.sales.monthly, req['course_id'], req['start_date'], req['end_date'])
             for row in rows:
                 row['evidence'] = [self.store.evidence(self.tid, 'sales', q) for q in row.pop('queries')]
+            remember_table(self.sales_tables, {'type': 'monthly', 'rows': [
+                {k: v for k, v in row.items() if k != 'evidence'} |
+                {'evidence_ids': [e['evidence_id'] for e in row['evidence']]} for row in rows]})
             return {'rows': rows, 'net_calculation': 'SQL分别聚合后以Decimal精确相减，保留无成交及仅退款月份'}
         return await self.io('销售月度统计（含空月份）', call)
 
@@ -135,5 +146,8 @@ class ResearchTools:
         req = self.task['request']
         async def call():
             value = await asyncio.to_thread(self.sales.channels, req['course_id'], req['start_date'], req['end_date'])
-            return self.store.evidence(self.tid, 'sales', value)
+            saved = self.store.evidence(self.tid, 'sales', value)
+            remember_table(self.sales_tables, {'type': 'channels', 'columns': saved['columns'],
+                'rows': saved['rows'], 'evidence_ids': [saved['evidence_id']], 'truncated': saved['truncated']})
+            return saved
         return await self.io('销售渠道成交与收款', call)

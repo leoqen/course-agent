@@ -12,6 +12,8 @@ network/course通过Pydantic结构交付原子事实、对象、适用状态、�
 
 运行职责拆分为 `runtime.py`（Agent组装与整合）、`prompts.py`（提示词）、`tools.py`（业务工具）、`budget.py`（调用预算）、`streaming.py`（正文与草稿）；交接约束在 `handoff.py`，持久化在 `store.py`。详见 [代码讲解](code-guide.md)。
 
+销售数字最终由 `report_tables.py` 直接呈现实际工具结果与逐行查询引用，主模型用一次位置标记留出表格位置，继续负责课程比较和解释。流式转换器处理跨块标记、重置与最终草稿一致性；篇幅预算包含整张表和程序口径。遗漏/重复标记或模型重写表格会触发一次修订，未解决为PARTIAL。详见 [销售表与新题验收](report-stability.md)。
+
 ## 数据及来源
 
 MySQL：courses、orders、refunds；SQLite：任务、事件、证据、产物索引；另一个SQLite保存LangGraph检查点；Milvus由已有RAG服务管理。
