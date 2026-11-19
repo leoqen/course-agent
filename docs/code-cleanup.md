@@ -7,7 +7,7 @@
 - 将后端预算、业务工具、提示词与正文流从 runtime 拆至 budget、tools、prompts、streaming，runtime 保留 Agent 组装与报告整合；原导入名称继续兼容已有脚本。
 - 将前端 HTTP、类型、状态映射、回答与图标分离，统一排版。保留现有对话、主题、SSE 与导出行为。
 - 移除未使用的教学依赖、Ant Design 与 Tailwind，更新 Python 与前端锁文件。requirements.txt 由 uv.lock 导出，requirements-korean.txt 仅作为兼容入口。
-- 更新 VS Code 启动、预提交语法检查、忽略规则、业务 README、安装说明、代码讲解与简历材料。参考项目来源和沿用组件继续在 UPSTREAM.md 明确说明。
+- 更新 VS Code 启动、预提交语法检查、忽略规则、业务 README、安装说明和开发文档。参考项目来源和沿用组件继续在 UPSTREAM.md 明确说明。
 
 ## 验证
 

@@ -6,7 +6,7 @@
 
 [快速启动](#快速启动) · [系统架构](#系统架构) · [使用示例](#使用示例) · [验证结果](#数据与验证结果) · [详细文档](#详细文档)
 
-> 当前面向本机学习与求职展示。自家课程与销售记录为合成验证资料，在线竞品信息来自实际搜索；已有工程测试与真实模型验收，但尚有语义质量问题，具体结果见下文。
+> 当前为本地运行的原型应用。自家课程与销售记录为合成验证资料，在线竞品信息来自实际搜索；已有工程测试与真实模型验收，但尚有语义质量问题，具体结果见下文。
 
 ## 项目解决什么问题
 
@@ -215,7 +215,7 @@ pnpm dev
 
 真实问答结论对应各自冻结版本；代码整理不构成新的真实模型验收。r13 详情见 [回答约束验收](docs/answer-contract-acceptance.md)，较早完整 15 题记录见 [固定版本验收](docs/final-acceptance.md)。
 
-最新销售表直接呈现、流式与导出一致性、冻结新题及剩余失败见 [报告稳定性验收](docs/report-stability.md)。可直接阅读 [综合成功样例](examples/reports/release-combined.md) 与 [部分完成样例](examples/reports/release-partial.md)，求职演示及讲解见 [面试演示](docs/interview-demo.md)。
+最新销售表直接呈现、流式与导出一致性、冻结新题及剩余失败见 [报告稳定性验收](docs/report-stability.md)。可直接阅读 [综合成功样例](examples/reports/release-combined.md) 与 [部分完成样例](examples/reports/release-partial.md)。
 
 无需付费模型的本地检查：
 
@@ -311,8 +311,6 @@ docs/               架构、运行、验收与讲解材料
 | [自主优化与验收](docs/autonomous-optimization.md) | 搜索硬限制、销售行引用、冻结新题及失败题回归 |
 | [报告稳定性与新题](docs/report-stability.md) | 查询表直接呈现、流式/导出一致性与五道新题逐项复核 |
 | [r13 新题验收](docs/answer-contract-acceptance.md) | 最新冻结问答结果与未通过项 |
-| [三分钟演示](docs/interview-demo.md) | 演示准备与讲解路线 |
-| [简历项目表述](docs/resume-project.md) | 可验证的贡献与描述边界 |
 
 ## 来源与致谢
 

@@ -1,6 +1,6 @@
-# 代码讲解路线
+# 代码结构与请求链路
 
-先跑通一次请求，再沿调用链阅读。目标是能解释每个边界为什么存在，以及失败时证据如何保留。
+本文沿一次请求的调用链说明各模块职责、数据边界及失败时的证据保留方式。
 
 ## 一次请求经过哪里
 
@@ -13,9 +13,9 @@
 7. `streaming.py` 提取主 Agent 正文、保存草稿并记录事件；`store.py` 将消息、任务、证据和事件落 SQLite。SSE 先取一致性快照再订阅增量，断线后可重取快照。
 8. 完成后服务保存报告和最终状态。导出接口读取已保存的回答，Markdown 直接生成，PDF 使用 `pdf.py`，不重跑模型。
 
-## 面试追问对应的实现
+## 关键设计与实现
 
-| 问题 | 先读哪里 | 要讲清楚的限制 |
+| 设计问题 | 实现位置 | 约束与限制 |
 |---|---|---|
 | 为什么需要三个专家 | runtime.py、tools.py | 三类数据与工具的边界；多 Agent 的效果提升尚无严格受控结论 |
 | 金额怎么验 | sales.py、scripts/sales_data.py、scripts/evaluate.py | 收款与退款分别按时间统计，用独立 Decimal 参考核对；数据是合成的 |
@@ -26,10 +26,6 @@
 
 本轮回答可靠性修复、预检与证据回放见 [定向回归](reliability-regression.md)。
 
-销售直接呈现链路：`tools.py` 登记实际表格与证据 → `report_tables.py` 保留原值生成带引用Markdown → `runtime.py` 合并模型解释并检查整份预算 → `streaming.py` 转换跨分块标记 → `server.py` 保存及按需导出。可对照 `tests/test_report_tables.py`、`tests/test_report_delivery.py` 与真实图测试讲解。效果与限制见 [销售表与新题验收](report-stability.md)。
+销售直接呈现链路：`tools.py` 登记实际表格与证据 → `report_tables.py` 保留原值生成带引用Markdown → `runtime.py` 合并模型解释并检查整份预算 → `streaming.py` 转换跨分块标记 → `server.py` 保存及按需导出。相关验证见 `tests/test_report_tables.py`、`tests/test_report_delivery.py` 与真实图测试。效果与限制见 [销售表与新题验收](report-stability.md)。
 
-## 如何介绍自己的工作
-
-介绍业务问题、设计选择、实际修改和验证证据。可以说明“使用 DeepAgents / LangGraph 实现课程经营调研应用，参考公开项目的多专家调度思路，使用 Codex 辅助开发”，再展开销售口径、证据交接、状态恢复等能亲自讲解的实现。
-
-框架、参考思路、沿用组件与本项目实现分开说明，详见 [来源边界](../UPSTREAM.md)。代码目录整理提升可读性；不能据此改变历史开发事实。
+框架、参考思路及沿用组件见 [来源说明](../UPSTREAM.md)。
